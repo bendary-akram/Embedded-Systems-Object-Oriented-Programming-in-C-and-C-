@@ -94,16 +94,23 @@ int main(void)
 
 	/*1024bytes had been buffered, then write() was called! so i have flush the buffer*/
 	setbuf(stdout, NULL);
+	//setvbuf( stdin, NULL, _IONBF, 0 );
+
 
 	/* USER CODE BEGIN 2 */
 
 	/* USER CODE END 2 */
-
+	char buff[10];
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1)
 	{
-		printf("Hello, world!");
+
+		printf("Hello, world!\r\n");
+		scanf("%d",&buff[0]);
+		printf("char %d \n\r",buff[0]);
+		scanf("%s",buff);
+		printf("string : %s \n\r",buff);
 		udelay(2000);
 
 		/* USER CODE END WHILE */

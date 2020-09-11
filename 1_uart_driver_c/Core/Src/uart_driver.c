@@ -59,7 +59,7 @@ int receive_byte(void)
 	while(!(USART2->SR & (USART_SR_RXNE))){} //RXNE
 	return USART2->DR;
 }
-
+#ifdef __GNUC__
 /* You need this if you want use to redirect printf to uart */
 int __io_putchar(int ch)
 {
@@ -69,3 +69,46 @@ int __io_putchar(int ch)
 
 	return ch;
 }
+
+int _read(int file, char *ptr, int len)
+{
+	int DataIdx;
+	int c;
+	for (DataIdx = 0; DataIdx < len; DataIdx++)
+	{
+		c=receive_byte();
+		*ptr++ =c;
+
+		if(c=='\r')
+		{
+			return (DataIdx+1);
+		}
+	}
+return len;
+}
+#else
+
+struct __FILE {int handle;};
+FILE __stdin = {0};
+FILE __stdout = {1};
+FILE __stderr = {2};
+
+int fgetc( FILE *f)
+{
+	int c;
+	c=receive_byte();
+	if(c=='\r')
+	{
+		uart_send_byte(c);
+		c='\n';
+	}
+	uart_send_byte(c);
+return c;
+}
+int fputc( int c,FILE *f)
+{
+	return uart_send_byte(c);
+
+}
+
+#endif
