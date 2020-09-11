@@ -19,7 +19,10 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "uart_driver.h"
 #include <unistd.h>
+#include <stdio.h>
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -36,11 +39,9 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 
@@ -48,19 +49,17 @@ UART_HandleTypeDef huart2;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
-static void MX_USART2_UART_Init(void);
-static void GPIO_Init(void);
 void udelay(uint32_t timeout_millisecond);
-static void USART2_UART_Init(void);
-void uart_send_data(uint8_t *datap,uint32_t size);
+
 
 /* USER CODE BEGIN PFP */
+
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
 
 /* USER CODE END 0 */
 
@@ -91,23 +90,21 @@ int main(void)
 	/* USER CODE END SysInit */
 
 	/* Initialize all configured peripherals */
-	//MX_GPIO_Init();
-	GPIO_Init();
+	uart2_Init();
 
-	USART2_UART_Init();
+	/*1024bytes had been buffered, then write() was called! so i have flush the buffer*/
+	setbuf(stdout, NULL);
+
 	/* USER CODE BEGIN 2 */
 
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
-	uint8_t buff[]="Hello";
-
 	while (1)
 	{
-		uart_send_data(buff, sizeof("Hello"));
-		// USART2->DR='H';
-		udelay(5000);
+		printf("Hello, world!");
+		udelay(2000);
 
 		/* USER CODE END WHILE */
 
@@ -168,146 +165,6 @@ void SystemClock_Config(void)
 	}
 }
 
-/**
- * @brief USART2 Initialization Function
- * @param None
- * @retval None
- */
-static void MX_USART2_UART_Init(void)
-{
-
-	/* USER CODE BEGIN USART2_Init 0 */
-
-	/* USER CODE END USART2_Init 0 */
-
-	/* USER CODE BEGIN USART2_Init 1 */
-
-	/* USER CODE END USART2_Init 1 */
-	huart2.Instance = USART2;
-	huart2.Init.BaudRate = 115200;
-	huart2.Init.WordLength = UART_WORDLENGTH_8B;
-	huart2.Init.StopBits = UART_STOPBITS_1;
-	huart2.Init.Parity = UART_PARITY_NONE;
-	huart2.Init.Mode = UART_MODE_TX_RX;
-	huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-	huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-	if (HAL_UART_Init(&huart2) != HAL_OK)
-	{
-		Error_Handler();
-	}
-	/* USER CODE BEGIN USART2_Init 2 */
-
-	/* USER CODE END USART2_Init 2 */
-
-}
-static void GPIO_Init(void)
-{
-	/*GPIO clock init */
-	__HAL_RCC_GPIOA_CLK_ENABLE();
-
-	/*init gpio as alternative function*/
-	GPIOA->MODER|= (0x02UL<<GPIO_MODER_MODER2_Pos)|(0x02UL<<GPIO_MODER_MODER3_Pos);	//alternative function
-	GPIOA->OSPEEDR|= (3<<GPIO_OSPEEDR_OSPEED2_Pos)|(3<<GPIO_OSPEEDR_OSPEED3_Pos);	//Very high speed
-	GPIOA->PUPDR|= (1<<GPIO_PUPDR_PUPD2_Pos)|(1<<GPIO_PUPDR_PUPD3_Pos);	//PUll up
-	GPIOA->AFR[0]|= (7<<GPIO_AFRL_AFSEL2_Pos)|(7<<GPIO_AFRL_AFSEL3_Pos);	//AF7 as uart2
-
-}
-static void USART2_UART_Init(void)
-{
-	uint32_t pclk=0;
-	/*uart clock init */
-	__HAL_RCC_USART2_CLK_ENABLE();
-	// tx and rx enable
-	USART2->CR1|=USART_CR1_RE|USART_CR1_TE;
-	//baud rate
-	pclk = HAL_RCC_GetPCLK1Freq();
-	USART2->BRR  = UART_BRR_SAMPLING16(pclk, 115200);
-	/*uart enable*/
-	USART2->CR1|=USART_CR1_UE;
-}
-
-uint8_t uart_send_byte(uint8_t ch)
-{
-	while(!(USART2->SR & (USART_SR_TXE))){} //TXE
-	USART2->DR=ch;
-	return ch;
-}
-
-void uart_send_data(uint8_t *datap,uint32_t size)
-{
-	uint32_t i=0;
-	while(i<size)
-	{
-		uart_send_byte(*datap++);
-		i++;
-	}
-}
-
-int receive_byte(void)
-{
-	while(!(USART2->SR & (USART_SR_RXNE))){} //RXNE
-	return USART2->DR;
-}
-/**
- * @brief GPIO Initialization Function
- * @param None
- * @retval None
- */
-static void MX_GPIO_Init(void)
-{
-	GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-	/* GPIO Ports Clock Enable */
-	__HAL_RCC_GPIOE_CLK_ENABLE();
-	__HAL_RCC_GPIOC_CLK_ENABLE();
-	__HAL_RCC_GPIOH_CLK_ENABLE();
-	__HAL_RCC_GPIOA_CLK_ENABLE();
-	__HAL_RCC_GPIOB_CLK_ENABLE();
-	__HAL_RCC_GPIOD_CLK_ENABLE();
-
-	/*Configure GPIO pin Output Level */
-	HAL_GPIO_WritePin(CS_I2C_SPI_GPIO_Port, CS_I2C_SPI_Pin, GPIO_PIN_RESET);
-
-	/*Configure GPIO pin Output Level */
-	HAL_GPIO_WritePin(OTG_FS_PowerSwitchOn_GPIO_Port, OTG_FS_PowerSwitchOn_Pin, GPIO_PIN_SET);
-
-	/*Configure GPIO pin Output Level */
-	HAL_GPIO_WritePin(GPIOD, LD4_Pin|LD3_Pin|LD5_Pin|LD6_Pin, GPIO_PIN_RESET);
-
-	/*Configure GPIO pin : CS_I2C_SPI_Pin */
-	GPIO_InitStruct.Pin = CS_I2C_SPI_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(CS_I2C_SPI_GPIO_Port, &GPIO_InitStruct);
-
-	/*Configure GPIO pin : OTG_FS_PowerSwitchOn_Pin */
-	GPIO_InitStruct.Pin = OTG_FS_PowerSwitchOn_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(OTG_FS_PowerSwitchOn_GPIO_Port, &GPIO_InitStruct);
-
-	/*Configure GPIO pin : B1_Pin */
-	GPIO_InitStruct.Pin = B1_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
-
-	/*Configure GPIO pin : BOOT1_Pin */
-	GPIO_InitStruct.Pin = BOOT1_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(BOOT1_GPIO_Port, &GPIO_InitStruct);
-
-	/*Configure GPIO pins : LD4_Pin LD3_Pin LD5_Pin LD6_Pin */
-	GPIO_InitStruct.Pin = LD4_Pin|LD3_Pin|LD5_Pin|LD6_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
-
-}
 
 /* USER CODE BEGIN 4 */
 

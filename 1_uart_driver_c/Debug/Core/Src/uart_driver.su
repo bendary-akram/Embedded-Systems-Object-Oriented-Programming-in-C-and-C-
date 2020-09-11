@@ -1,0 +1,6 @@
+uart_driver.c:10:13:uart_gpio_init	16	static
+uart_driver.c:23:6:uart2_Init	56	static
+uart_driver.c:40:9:uart_send_byte	16	static
+uart_driver.c:47:6:uart_send_data	24	static
+uart_driver.c:57:5:receive_byte	4	static
+uart_driver.c:64:5:__io_putchar	24	static
