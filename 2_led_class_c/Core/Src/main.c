@@ -99,17 +99,13 @@ int main(void)
 	/*1024bytes had been buffered, then write() was called! so i have flush the buffer*/
 	setbuf(stdout, NULL);
 
-	led_ctor(&led1,LD3_ORANGE,OFF);
-	led_getState(&led1);
+	led_ctor(&led1,LD3_ORANGE,ON);
 
-	led_ctor(&led2,LD4_GREEN,OFF);
-	led_getState(&led2);
+	led_ctor(&led2,LD4_GREEN,ON);
 
-	led_ctor(&led3,LD5_RED,OFF);
-	led_getState(&led3);
+	led_ctor(&led3,LD5_RED,ON);
 
-	led_ctor(&led4,LD6_BLUE,OFF);
-	led_getState(&led4);
+	led_ctor(&led4,LD6_BLUE,ON);
 
   /* USER CODE END 2 */
 
@@ -117,10 +113,20 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+		udelay(2000);
+
+		led_setState(&led1,OFF);
+		led_setState(&led2,OFF);
+		led_setState(&led3,OFF);
+		led_setState(&led4,OFF);
+
 
 		udelay(2000);
     /* USER CODE END WHILE */
-
+		led_setState(&led1,ON);
+		led_setState(&led2,ON);
+		led_setState(&led3,ON);
+		led_setState(&led4,ON);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
